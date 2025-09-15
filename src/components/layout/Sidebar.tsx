@@ -54,6 +54,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
             Get receipts, cloud backup, and advanced reports
           </p>
           <button className="bg-white text-blue-600 text-xs px-3 py-1 rounded font-medium hover:bg-gray-100 transition-colors">
+            onClick={() => {
+              // Simulate upgrade - in real app this would integrate with payment processor
+              if (confirm('Upgrade to Pro for ₦2,000/month? (This is a demo - no actual payment required)')) {
+                const updatedUser = { ...user, isPro: true };
+                localStorage.setItem('sbh_user', JSON.stringify(updatedUser));
+                window.location.reload();
+              }
+            }}
             Upgrade Now
           </button>
         </div>

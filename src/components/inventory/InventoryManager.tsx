@@ -31,6 +31,17 @@ const InventoryManager = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name.trim()) {
+      alert('Product name is required');
+      return;
+    }
+
+    if (parseFloat(formData.sellingPrice) <= parseFloat(formData.costPrice)) {
+      if (!confirm('Selling price is not higher than cost price. This will result in no profit or loss. Continue?')) {
+        return;
+      }
+    }
+
     const productData = {
       name: formData.name,
       quantity: parseInt(formData.quantity),
@@ -75,6 +86,11 @@ const InventoryManager = () => {
   const handleDelete = (productId: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
       setProducts(products.filter(product => product.id !== productId));
+      
+      // Also remove any sales records for this product to maintain data integrity
+      const sales = JSON.parse(localStorage.getItem('sbh_sales') || '[]');
+      const updatedSales = sales.filter((sale: any) => sale.productId !== productId);
+      localStorage.setItem('sbh_sales', JSON.stringify(updatedSales));
     }
   };
 
@@ -140,6 +156,7 @@ const InventoryManager = () => {
                 onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min="0"
+                step="1"
                 required
               />
             </div>

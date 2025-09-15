@@ -1,12 +1,53 @@
 import React, { useState, useMemo } from 'react';
-import { BarChart3, TrendingUp, DollarSign, Package, Calendar } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, Package, Calendar, Download, FileText } from 'lucide-react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { Sale, Product } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 
 const Reports = () => {
+  const { user } = useAuth();
   const [sales] = useLocalStorage<Sale[]>('sbh_sales', []);
   const [products] = useLocalStorage<Product[]>('sbh_products', []);
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportReport = async () => {
+    setIsExporting(true);
+    try {
+      const reportContent = `
+SMALL BUSINESS HELPER - ${period.toUpperCase()} REPORT
+Business: ${user?.businessName}
+Generated: ${new Date().toLocaleString()}
+
+SALES SUMMARY
+Total Sales: ₦${reportData.totalSales.toLocaleString()}
+Total Profit: ₦${reportData.totalProfit.toLocaleString()}
+Paid Sales: ₦${reportData.totalPaid.toLocaleString()}
+Outstanding Debts: ₦${reportData.totalDebts.toLocaleString()}
+Number of Transactions: ${reportData.salesCount}
+Profit Margin: ${reportData.profitMargin.toFixed(1)}%
+
+TOP SELLING PRODUCTS
+${reportData.topProducts.map((product, index) => 
+  `${index + 1}. ${product.name} - ${product.quantity} units - ₦${product.revenue.toLocaleString()}`
+).join('\n')}
+      `.trim();
+      
+      const blob = new Blob([reportContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${period}-report-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Failed to export report. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const reportData = useMemo(() => {
     const now = new Date();
@@ -112,7 +153,17 @@ const Reports = () => {
         </div>
         
         {/* Period Selector */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {user?.isPro && (
+            <button
+              onClick={exportReport}
+              disabled={isExporting}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2 mr-4"
+            >
+              <Download className="h-4 w-4" />
+              {isExporting ? 'Exporting...' : 'Export'}
+            </button>
+          )}
           <button
             onClick={() => setPeriod('daily')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${

@@ -7,18 +7,26 @@ import {
   Plus,
   TrendingUp,
   AlertTriangle,
-  DollarSign
+  DollarSign,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { Product, Sale, Debt } from '../../types';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [products] = useLocalStorage<Product[]>('sbh_products', []);
   const [sales] = useLocalStorage<Sale[]>('sbh_sales', []);
   const [debts] = useLocalStorage<Debt[]>('sbh_debts', []);
   const [activeTab, setActiveTab] = useState('overview');
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  const refreshData = () => {
+    setLastRefresh(new Date());
+    // Force re-render by updating a state
+    window.location.reload();
+  };
 
   // Calculate dashboard stats
   const todaySales = sales.filter(sale => {
@@ -113,8 +121,16 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="flex items-center space-x-2">
+              <button
+                onClick={refreshData}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Refresh data"
+              >
+                <RefreshCw className="h-5 w-5" />
+              </button>
               {!user?.isPro && (
                 <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all">
+                  onClick={() => updateUser({ isPro: true })}
                   Upgrade to Pro
                 </button>
               )}

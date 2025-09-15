@@ -1,26 +1,66 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, User, Phone, Store, Crown, Shield } from 'lucide-react';
+import { Settings as SettingsIcon, User, Phone, Store, Crown, Shield, Download, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Settings = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [businessName, setBusinessName] = useState(user?.businessName || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleSave = () => {
-    // Update user data in localStorage
-    const savedUser = JSON.parse(localStorage.getItem('sbh_user') || '{}');
-    const updatedUser = { ...savedUser, businessName };
-    localStorage.setItem('sbh_user', JSON.stringify(updatedUser));
-    
-    // Update users list
-    const users = JSON.parse(localStorage.getItem('sbh_users') || '[]');
-    const updatedUsers = users.map((u: any) => 
-      u.id === user?.id ? { ...u, businessName } : u
-    );
-    localStorage.setItem('sbh_users', JSON.stringify(updatedUsers));
-    
+    if (!businessName.trim()) {
+      alert('Business name cannot be empty');
+      return;
+    }
+    updateUser({ businessName });
     setIsEditing(false);
+  };
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const products = JSON.parse(localStorage.getItem('sbh_products') || '[]');
+      const sales = JSON.parse(localStorage.getItem('sbh_sales') || '[]');
+      const debts = JSON.parse(localStorage.getItem('sbh_debts') || '[]');
+      
+      const exportData = {
+        user: user,
+        products,
+        sales,
+        debts,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `small-business-helper-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleClearData = () => {
+    if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+      if (confirm('This will delete all your products, sales, and debts. Are you absolutely sure?')) {
+        localStorage.removeItem('sbh_products');
+        localStorage.removeItem('sbh_sales');
+        localStorage.removeItem('sbh_debts');
+        alert('All data has been cleared successfully.');
+        window.location.reload();
+      }
+    }
   };
 
   return (
@@ -137,8 +177,13 @@ const Settings = () => {
                 <p className="font-medium text-gray-900">Export Data</p>
                 <p className="text-sm text-gray-500">Download your business data</p>
               </div>
-              <button className="text-blue-600 hover:text-blue-700 font-medium">
-                Export
+              <button 
+                onClick={handleExportData}
+                disabled={isExporting}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                {isExporting ? 'Exporting...' : 'Export'}
               </button>
             </div>
             
@@ -148,16 +193,10 @@ const Settings = () => {
                 <p className="text-sm text-gray-500">Remove all sales, products, and debts</p>
               </div>
               <button 
-                onClick={() => {
-                  if (confirm('Are you sure? This action cannot be undone.')) {
-                    localStorage.removeItem('sbh_products');
-                    localStorage.removeItem('sbh_sales');
-                    localStorage.removeItem('sbh_debts');
-                    window.location.reload();
-                  }
-                }}
-                className="text-red-600 hover:text-red-700 font-medium"
+                onClick={handleClearData}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2"
               >
+                <Trash2 className="h-4 w-4" />
                 Clear Data
               </button>
             </div>

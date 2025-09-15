@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Minus, User, Phone } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, User, Phone, Package } from 'lucide-react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { Product, Sale } from '../../types';
 
 const SalesForm = () => {
   const [products, setProducts] = useLocalStorage<Product[]>('sbh_products', []);
   const [sales, setSales] = useLocalStorage<Sale[]>('sbh_sales', []);
+  const [debts, setDebts] = useLocalStorage('sbh_debts', []);
   
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -67,7 +68,6 @@ const SalesForm = () => {
 
       // If it's a debt, also save to debts
       if (!isPaid) {
-        const debts = JSON.parse(localStorage.getItem('sbh_debts') || '[]');
         const newDebt = {
           id: Date.now().toString(),
           customerId: `${customerPhone}_${Date.now()}`,
@@ -78,7 +78,7 @@ const SalesForm = () => {
           isPaid: false,
           createdAt: new Date()
         };
-        localStorage.setItem('sbh_debts', JSON.stringify([...debts, newDebt]));
+        setDebts([...debts, newDebt]);
       }
 
       setSuccess(`Sale recorded successfully! ₦${newSale.totalAmount.toLocaleString()}`);

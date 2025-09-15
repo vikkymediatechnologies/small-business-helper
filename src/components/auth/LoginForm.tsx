@@ -22,6 +22,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       return;
     }
 
+    if (phone.length < 10) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
     if (pin.length !== 4) {
       setError('PIN must be 4 digits');
       return;

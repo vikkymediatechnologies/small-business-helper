@@ -9,12 +9,30 @@ const DebtManager = () => {
   const [filter, setFilter] = useState<'all' | 'unpaid' | 'paid'>('unpaid');
 
   const handleMarkPaid = (debtId: string) => {
+    if (!confirm('Mark this debt as paid?')) {
+      return;
+    }
+    
     const updatedDebts = debts.map(debt =>
       debt.id === debtId
         ? { ...debt, isPaid: true, paidAt: new Date() }
         : debt
     );
     setDebts(updatedDebts);
+    
+    // Also update the corresponding sale record
+    const sales = JSON.parse(localStorage.getItem('sbh_sales') || '[]');
+    const debt = debts.find(d => d.id === debtId);
+    if (debt) {
+      const updatedSales = sales.map((sale: any) => 
+        sale.customerPhone === debt.customerPhone && 
+        sale.totalAmount === debt.amount && 
+        !sale.isPaid
+          ? { ...sale, isPaid: true }
+          : sale
+      );
+      localStorage.setItem('sbh_sales', JSON.stringify(updatedSales));
+    }
   };
 
   const filteredDebts = debts.filter(debt => {

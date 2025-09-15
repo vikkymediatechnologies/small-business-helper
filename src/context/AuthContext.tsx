@@ -7,6 +7,7 @@ interface AuthContextType {
   register: (phone: string, pin: string, businessName: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,8 +107,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('sbh_user');
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      localStorage.setItem('sbh_user', JSON.stringify(updatedUser));
+      
+      // Update in users list too
+      const users = JSON.parse(localStorage.getItem('sbh_users') || '[]');
+      const updatedUsers = users.map((u: any) => 
+        u.id === user.id ? { ...u, ...updates } : u
+      );
+      localStorage.setItem('sbh_users', JSON.stringify(updatedUsers));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
