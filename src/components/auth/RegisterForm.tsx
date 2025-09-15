@@ -24,6 +24,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       return;
     }
 
+    if (phone.length < 10) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
+    if (businessName.trim().length < 2) {
+      setError('Business name must be at least 2 characters');
+      return;
+    }
+
     if (pin.length !== 4) {
       setError('PIN must be 4 digits');
       return;
