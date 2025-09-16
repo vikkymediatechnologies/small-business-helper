@@ -1,42 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   ShoppingCart, 
   Package, 
   Users, 
   BarChart3, 
-  Plus,
   TrendingUp,
   AlertTriangle,
   DollarSign,
   RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
-import { Product, Sale, Debt } from '../../types';
+import { useProducts, useSales, useDebts } from '../../hooks/useSupabaseData';
 
-const Dashboard = () => {
+interface DashboardProps {
+  setActiveTab: (tab: string) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
   const { user, updateUser } = useAuth();
-  const [products] = useLocalStorage<Product[]>('sbh_products', []);
-  const [sales] = useLocalStorage<Sale[]>('sbh_sales', []);
-  const [debts] = useLocalStorage<Debt[]>('sbh_debts', []);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const { products, refetch: refetchProducts } = useProducts();
+  const { sales, refetch: refetchSales } = useSales();
+  const { debts, refetch: refetchDebts } = useDebts();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const refreshData = () => {
-    setLastRefresh(new Date());
-    // Force re-render by updating a state
-    window.location.reload();
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchProducts(),
+        refetchSales(),
+        refetchDebts()
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Calculate dashboard stats
   const todaySales = sales.filter(sale => {
     const today = new Date().toDateString();
-    return new Date(sale.createdAt).toDateString() === today;
+    return new Date(sale.created_at).toDateString() === today;
   });
 
-  const totalTodaySales = todaySales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-  const totalDebts = debts.filter(debt => !debt.isPaid).reduce((sum, debt) => sum + debt.amount, 0);
-  const lowStockItems = products.filter(product => product.quantity <= product.lowStockAlert);
+  const totalTodaySales = todaySales.reduce((sum, sale) => sum + sale.total_amount, 0);
+  const totalDebts = debts.filter(debt => !debt.is_paid).reduce((sum, debt) => sum + debt.amount, 0);
+  const lowStockItems = products.filter(product => product.quantity <= product.low_stock_alert);
   const totalProducts = products.length;
 
   const stats = [
@@ -59,11 +67,11 @@ const Dashboard = () => {
       value: `₦${totalDebts.toLocaleString()}`,
       icon: Users,
       color: 'bg-orange-500',
-      change: `${debts.filter(d => !d.isPaid).length} customers`
+      change: `${debts.filter(d => !d.is_paid).length} customers`
     },
     {
       title: 'Monthly Sales',
-      value: `₦${sales.reduce((sum, sale) => sum + sale.totalAmount, 0).toLocaleString()}`,
+      value: `₦${sales.reduce((sum, sale) => sum + sale.total_amount, 0).toLocaleString()}`,
       icon: TrendingUp,
       color: 'bg-purple-500',
       change: `${sales.length} total sales`
@@ -123,14 +131,17 @@ const Dashboard = () => {
             <div className="flex items-center space-x-2">
               <button
                 onClick={refreshData}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={isRefreshing}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
                 title="Refresh data"
               >
-                <RefreshCw className="h-5 w-5" />
+                <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
               {!user?.isPro && (
-                <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all">
+                <button 
                   onClick={() => updateUser({ isPro: true })}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
+                >
                   Upgrade to Pro
                 </button>
               )}
@@ -201,16 +212,16 @@ const Dashboard = () => {
               {todaySales.slice(0, 5).map((sale) => (
                 <div key={sale.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                   <div>
-                    <p className="font-medium text-gray-900">{sale.productName}</p>
+                    <p className="font-medium text-gray-900">{sale.product_name}</p>
                     <p className="text-sm text-gray-500">
-                      Qty: {sale.quantity} × ₦{sale.unitPrice.toLocaleString()}
-                      {sale.customerName && ` • ${sale.customerName}`}
+                      Qty: {sale.quantity} × ₦{sale.unit_price.toLocaleString()}
+                      {sale.customer_name && ` • ${sale.customer_name}`}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-gray-900">₦{sale.totalAmount.toLocaleString()}</p>
-                    <p className={`text-xs ${sale.isPaid ? 'text-green-600' : 'text-orange-600'}`}>
-                      {sale.isPaid ? 'Paid' : 'Debt'}
+                    <p className="font-medium text-gray-900">₦{sale.total_amount.toLocaleString()}</p>
+                    <p className={`text-xs ${sale.is_paid ? 'text-green-600' : 'text-orange-600'}`}>
+                      {sale.is_paid ? 'Paid' : 'Debt'}
                     </p>
                   </div>
                 </div>

@@ -1,13 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+
+interface User {
+  id: string;
+  phone: string;
+  businessName: string;
+  isPro: boolean;
+  createdAt: Date;
+}
 
 interface AuthContextType {
   user: User | null;
-  login: (phone: string, pin: string) => Promise<boolean>;
-  register: (phone: string, pin: string, businessName: string) => Promise<boolean>;
-  logout: () => void;
+  supabaseUser: SupabaseUser | null;
+  login: (phone: string, password: string) => Promise<boolean>;
+  register: (phone: string, password: string, businessName: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   isLoading: boolean;
-  updateUser: (updates: Partial<User>) => void;
+  updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,108 +32,183 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem('sbh_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSupabaseUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSupabaseUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (phone: string, pin: string): Promise<boolean> => {
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setUser(null);
+      } else if (data) {
+        setUser({
+          id: data.id,
+          phone: data.phone,
+          businessName: data.business_name,
+          isPro: data.is_pro,
+          createdAt: new Date(data.created_at)
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (phone: string, password: string, businessName: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create auth user with phone as email (Supabase requires email format)
+      const email = `${phone}@smallbusinesshelper.local`;
       
-      // Check if user exists in localStorage
-      const users = JSON.parse(localStorage.getItem('sbh_users') || '[]');
-      const existingUser = users.find((u: any) => u.phone === phone && u.pin === pin);
-      
-      if (existingUser) {
-        const userData: User = {
-          id: existingUser.id,
-          phone: existingUser.phone,
-          businessName: existingUser.businessName,
-          isPro: existingUser.isPro || false,
-          createdAt: new Date(existingUser.createdAt)
-        };
-        setUser(userData);
-        localStorage.setItem('sbh_user', JSON.stringify(userData));
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            phone,
+            business_name: businessName
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        return false;
+      }
+
+      if (authData.user) {
+        // Create profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            phone,
+            business_name: businessName,
+            is_pro: false
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          return false;
+        }
+
         return true;
       }
+
+      return false;
+    } catch (error) {
+      console.error('Registration error:', error);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (phone: string, pin: string, businessName: string): Promise<boolean> => {
+  const login = async (phone: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const email = `${phone}@smallbusinesshelper.local`;
       
-      const users = JSON.parse(localStorage.getItem('sbh_users') || '[]');
-      const existingUser = users.find((u: any) => u.phone === phone);
-      
-      if (existingUser) {
-        return false; // User already exists
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        return false;
       }
-      
-      const newUser = {
-        id: Date.now().toString(),
-        phone,
-        pin,
-        businessName,
-        isPro: false,
-        createdAt: new Date().toISOString()
-      };
-      
-      users.push(newUser);
-      localStorage.setItem('sbh_users', JSON.stringify(users));
-      
-      const userData: User = {
-        id: newUser.id,
-        phone: newUser.phone,
-        businessName: newUser.businessName,
-        isPro: newUser.isPro,
-        createdAt: new Date(newUser.createdAt)
-      };
-      
-      setUser(userData);
-      localStorage.setItem('sbh_user', JSON.stringify(userData));
-      return true;
+
+      return !!data.user;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('sbh_user');
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSupabaseUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('sbh_user', JSON.stringify(updatedUser));
-      
-      // Update in users list too
-      const users = JSON.parse(localStorage.getItem('sbh_users') || '[]');
-      const updatedUsers = users.map((u: any) => 
-        u.id === user.id ? { ...u, ...updates } : u
-      );
-      localStorage.setItem('sbh_users', JSON.stringify(updatedUsers));
+  const updateUser = async (updates: Partial<User>) => {
+    if (!user || !supabaseUser) return;
+
+    try {
+      const updateData: any = {};
+      if (updates.businessName) updateData.business_name = updates.businessName;
+      if (updates.isPro !== undefined) updateData.is_pro = updates.isPro;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Update error:', error);
+        return;
+      }
+
+      setUser(prev => prev ? { ...prev, ...updates } : null);
+    } catch (error) {
+      console.error('Update user error:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading, updateUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      supabaseUser, 
+      login, 
+      register, 
+      logout, 
+      isLoading, 
+      updateUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );

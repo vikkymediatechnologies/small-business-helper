@@ -1,51 +1,59 @@
 import React, { useState } from 'react';
 import { Users, Phone, CheckCircle, Clock, Search } from 'lucide-react';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
-import { Debt } from '../../types';
+import { useDebts, useSales } from '../../hooks/useSupabaseData';
+import { supabase } from '../../lib/supabase';
 
 const DebtManager = () => {
-  const [debts, setDebts] = useLocalStorage<Debt[]>('sbh_debts', []);
+  const { debts, loading, markDebtPaid } = useDebts();
+  const { sales } = useSales();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'unpaid' | 'paid'>('unpaid');
 
-  const handleMarkPaid = (debtId: string) => {
+  const handleMarkPaid = async (debtId: string) => {
     if (!confirm('Mark this debt as paid?')) {
       return;
     }
     
-    const updatedDebts = debts.map(debt =>
-      debt.id === debtId
-        ? { ...debt, isPaid: true, paidAt: new Date() }
-        : debt
-    );
-    setDebts(updatedDebts);
+    const debt = debts.find(d => d.id === debtId);
+    if (!debt) return;
+
+    // Mark debt as paid
+    await markDebtPaid(debtId);
     
     // Also update the corresponding sale record
-    const sales = JSON.parse(localStorage.getItem('sbh_sales') || '[]');
-    const debt = debts.find(d => d.id === debtId);
-    if (debt) {
-      const updatedSales = sales.map((sale: any) => 
-        sale.customerPhone === debt.customerPhone && 
-        sale.totalAmount === debt.amount && 
-        !sale.isPaid
-          ? { ...sale, isPaid: true }
-          : sale
-      );
-      localStorage.setItem('sbh_sales', JSON.stringify(updatedSales));
+    const { error } = await supabase
+      .from('sales')
+      .update({ is_paid: true })
+      .eq('customer_phone', debt.customer_phone)
+      .eq('total_amount', debt.amount)
+      .eq('is_paid', false);
+
+    if (error) {
+      console.error('Error updating sale:', error);
     }
   };
 
   const filteredDebts = debts.filter(debt => {
-    const matchesSearch = debt.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         debt.customerPhone.includes(searchTerm);
+    const matchesSearch = debt.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         debt.customer_phone.includes(searchTerm);
     const matchesFilter = filter === 'all' || 
-                         (filter === 'paid' && debt.isPaid) ||
-                         (filter === 'unpaid' && !debt.isPaid);
+                         (filter === 'paid' && debt.is_paid) ||
+                         (filter === 'unpaid' && !debt.is_paid);
     return matchesSearch && matchesFilter;
   });
 
-  const totalUnpaidDebts = debts.filter(debt => !debt.isPaid).reduce((sum, debt) => sum + debt.amount, 0);
-  const totalPaidDebts = debts.filter(debt => debt.isPaid).reduce((sum, debt) => sum + debt.amount, 0);
+  const totalUnpaidDebts = debts.filter(debt => !debt.is_paid).reduce((sum, debt) => sum + debt.amount, 0);
+  const totalPaidDebts = debts.filter(debt => debt.is_paid).reduce((sum, debt) => sum + debt.amount, 0);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-orange-600 border-t-transparent"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -81,7 +89,7 @@ const DebtManager = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Total Customers</p>
               <p className="text-2xl font-bold text-blue-600">
-                {new Set(debts.map(debt => debt.customerPhone)).size}
+                {new Set(debts.map(debt => debt.customer_phone)).size}
               </p>
             </div>
             <Users className="h-8 w-8 text-blue-500" />
@@ -181,10 +189,10 @@ const DebtManager = () => {
                   <tr key={debt.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{debt.customerName}</div>
+                        <div className="text-sm font-medium text-gray-900">{debt.customer_name}</div>
                         <div className="text-sm text-gray-500 flex items-center gap-1">
                           <Phone className="h-3 w-3" />
-                          {debt.customerPhone}
+                          {debt.customer_phone}
                         </div>
                       </div>
                     </td>
@@ -195,19 +203,19 @@ const DebtManager = () => {
                       ₦{debt.amount.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(debt.createdAt).toLocaleDateString()}
+                      {new Date(debt.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        debt.isPaid 
+                        debt.is_paid 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-orange-100 text-orange-800'
                       }`}>
-                        {debt.isPaid ? 'Paid' : 'Unpaid'}
+                        {debt.is_paid ? 'Paid' : 'Unpaid'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {!debt.isPaid && (
+                      {!debt.is_paid && (
                         <button
                           onClick={() => handleMarkPaid(debt.id)}
                           className="bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
@@ -216,9 +224,9 @@ const DebtManager = () => {
                           Mark Paid
                         </button>
                       )}
-                      {debt.isPaid && debt.paidAt && (
+                      {debt.is_paid && debt.paid_at && (
                         <span className="text-xs text-gray-500">
-                          Paid on {new Date(debt.paidAt).toLocaleDateString()}
+                          Paid on {new Date(debt.paid_at).toLocaleDateString()}
                         </span>
                       )}
                     </td>

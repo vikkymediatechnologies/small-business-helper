@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Minus, User, Phone, Package } from 'lucide-react';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
-import { Product, Sale } from '../../types';
+import React, { useState } from 'react';
+import { ShoppingCart, Plus, Minus, User, Package } from 'lucide-react';
+import { useProducts, useSales, useDebts } from '../../hooks/useSupabaseData';
 
 const SalesForm = () => {
-  const [products, setProducts] = useLocalStorage<Product[]>('sbh_products', []);
-  const [sales, setSales] = useLocalStorage<Sale[]>('sbh_sales', []);
-  const [debts, setDebts] = useLocalStorage('sbh_debts', []);
+  const { products, updateProduct } = useProducts();
+  const { addSale } = useSales();
+  const { addDebt } = useDebts();
   
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -41,47 +40,41 @@ const SalesForm = () => {
 
     try {
       // Create sale record
-      const newSale: Sale = {
-        id: Date.now().toString(),
-        productId: selectedProduct.id,
-        productName: selectedProduct.name,
+      const saleData = {
+        product_id: selectedProduct.id,
+        product_name: selectedProduct.name,
         quantity,
-        unitPrice: selectedProduct.sellingPrice,
-        totalAmount: quantity * selectedProduct.sellingPrice,
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || undefined,
-        isPaid,
-        isDebt: !isPaid,
-        createdAt: new Date()
+        unit_price: selectedProduct.selling_price,
+        total_amount: quantity * selectedProduct.selling_price,
+        customer_name: customerName || null,
+        customer_phone: customerPhone || null,
+        is_paid: isPaid,
+        is_debt: !isPaid
       };
 
-      // Update product quantity
-      const updatedProducts = products.map(product => 
-        product.id === selectedProduct.id 
-          ? { ...product, quantity: product.quantity - quantity }
-          : product
-      );
-
-      // Save updates
-      setSales([...sales, newSale]);
-      setProducts(updatedProducts);
-
-      // If it's a debt, also save to debts
-      if (!isPaid) {
-        const newDebt = {
-          id: Date.now().toString(),
-          customerId: `${customerPhone}_${Date.now()}`,
-          customerName,
-          customerPhone,
-          amount: newSale.totalAmount,
-          description: `${quantity}x ${selectedProduct.name}`,
-          isPaid: false,
-          createdAt: new Date()
-        };
-        setDebts([...debts, newDebt]);
+      const sale = await addSale(saleData);
+      if (!sale) {
+        setError('Failed to record sale');
+        return;
       }
 
-      setSuccess(`Sale recorded successfully! ₦${newSale.totalAmount.toLocaleString()}`);
+      // Update product quantity
+      await updateProduct(selectedProduct.id, {
+        quantity: selectedProduct.quantity - quantity
+      });
+
+      // If it's a debt, also save to debts table
+      if (!isPaid) {
+        await addDebt({
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          amount: saleData.total_amount,
+          description: `${quantity}x ${selectedProduct.name}`,
+          is_paid: false
+        });
+      }
+
+      setSuccess(`Sale recorded successfully! ₦${saleData.total_amount.toLocaleString()}`);
       
       // Reset form
       setSelectedProduct(null);
@@ -97,7 +90,7 @@ const SalesForm = () => {
     }
   };
 
-  const totalAmount = selectedProduct ? quantity * selectedProduct.sellingPrice : 0;
+  const totalAmount = selectedProduct ? quantity * selectedProduct.selling_price : 0;
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -135,7 +128,7 @@ const SalesForm = () => {
                 <option value="">Choose a product...</option>
                 {products.filter(p => p.quantity > 0).map(product => (
                   <option key={product.id} value={product.id}>
-                    {product.name} - ₦{product.sellingPrice.toLocaleString()} (Stock: {product.quantity})
+                    {product.name} - ₦{product.selling_price.toLocaleString()} (Stock: {product.quantity})
                   </option>
                 ))}
               </select>

@@ -35,7 +35,7 @@ const AppPage = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard setActiveTab={setActiveTab} />;
       case 'sales':
         return <SalesForm />;
       case 'inventory':

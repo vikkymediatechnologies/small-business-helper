@@ -1,34 +1,33 @@
 import React, { useState } from 'react';
 import { Package, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
-import { Product } from '../../types';
+import { useProducts } from '../../hooks/useSupabaseData';
 
 const InventoryManager = () => {
-  const [products, setProducts] = useLocalStorage<Product[]>('sbh_products', []);
+  const { products, loading, addProduct, updateProduct, deleteProduct } = useProducts();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     name: '',
     quantity: '',
-    costPrice: '',
-    sellingPrice: '',
-    lowStockAlert: '5'
+    cost_price: '',
+    selling_price: '',
+    low_stock_alert: '5'
   });
 
   const resetForm = () => {
     setFormData({
       name: '',
       quantity: '',
-      costPrice: '',
-      sellingPrice: '',
-      lowStockAlert: '5'
+      cost_price: '',
+      selling_price: '',
+      low_stock_alert: '5'
     });
     setShowAddForm(false);
     setEditingProduct(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
@@ -36,7 +35,7 @@ const InventoryManager = () => {
       return;
     }
 
-    if (parseFloat(formData.sellingPrice) <= parseFloat(formData.costPrice)) {
+    if (parseFloat(formData.selling_price) <= parseFloat(formData.cost_price)) {
       if (!confirm('Selling price is not higher than cost price. This will result in no profit or loss. Continue?')) {
         return;
       }
@@ -45,56 +44,51 @@ const InventoryManager = () => {
     const productData = {
       name: formData.name,
       quantity: parseInt(formData.quantity),
-      costPrice: parseFloat(formData.costPrice),
-      sellingPrice: parseFloat(formData.sellingPrice),
-      lowStockAlert: parseInt(formData.lowStockAlert)
+      cost_price: parseFloat(formData.cost_price),
+      selling_price: parseFloat(formData.selling_price),
+      low_stock_alert: parseInt(formData.low_stock_alert)
     };
 
     if (editingProduct) {
       // Update existing product
-      const updatedProducts = products.map(product =>
-        product.id === editingProduct.id
-          ? { ...product, ...productData }
-          : product
-      );
-      setProducts(updatedProducts);
+      await updateProduct(editingProduct.id, productData);
     } else {
       // Add new product
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        ...productData,
-        createdAt: new Date()
-      };
-      setProducts([...products, newProduct]);
+      await addProduct(productData);
     }
 
     resetForm();
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: any) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
       quantity: product.quantity.toString(),
-      costPrice: product.costPrice.toString(),
-      sellingPrice: product.sellingPrice.toString(),
-      lowStockAlert: product.lowStockAlert.toString()
+      cost_price: product.cost_price.toString(),
+      selling_price: product.selling_price.toString(),
+      low_stock_alert: product.low_stock_alert.toString()
     });
     setShowAddForm(true);
   };
 
-  const handleDelete = (productId: string) => {
+  const handleDelete = async (productId: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      setProducts(products.filter(product => product.id !== productId));
-      
-      // Also remove any sales records for this product to maintain data integrity
-      const sales = JSON.parse(localStorage.getItem('sbh_sales') || '[]');
-      const updatedSales = sales.filter((sale: any) => sale.productId !== productId);
-      localStorage.setItem('sbh_sales', JSON.stringify(updatedSales));
+      await deleteProduct(productId);
     }
   };
 
-  const lowStockProducts = products.filter(product => product.quantity <= product.lowStockAlert);
+  const lowStockProducts = products.filter(product => product.quantity <= product.low_stock_alert);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -166,8 +160,8 @@ const InventoryManager = () => {
               </label>
               <input
                 type="number"
-                value={formData.costPrice}
-                onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                value={formData.cost_price}
+                onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min="0"
                 step="0.01"
@@ -180,8 +174,8 @@ const InventoryManager = () => {
               </label>
               <input
                 type="number"
-                value={formData.sellingPrice}
-                onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
+                value={formData.selling_price}
+                onChange={(e) => setFormData({ ...formData, selling_price: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min="0"
                 step="0.01"
@@ -194,8 +188,8 @@ const InventoryManager = () => {
               </label>
               <input
                 type="number"
-                value={formData.lowStockAlert}
-                onChange={(e) => setFormData({ ...formData, lowStockAlert: e.target.value })}
+                value={formData.low_stock_alert}
+                onChange={(e) => setFormData({ ...formData, low_stock_alert: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min="0"
                 required
@@ -260,8 +254,8 @@ const InventoryManager = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {products.map((product) => {
-                  const profitMargin = ((product.sellingPrice - product.costPrice) / product.costPrice * 100).toFixed(1);
-                  const isLowStock = product.quantity <= product.lowStockAlert;
+                  const profitMargin = ((product.selling_price - product.cost_price) / product.cost_price * 100).toFixed(1);
+                  const isLowStock = product.quantity <= product.low_stock_alert;
                   
                   return (
                     <tr key={product.id} className={isLowStock ? 'bg-orange-50' : ''}>
@@ -284,10 +278,10 @@ const InventoryManager = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ₦{product.costPrice.toLocaleString()}
+                        ₦{product.cost_price.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ₦{product.sellingPrice.toLocaleString()}
+                        ₦{product.selling_price.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
                         {profitMargin}%
