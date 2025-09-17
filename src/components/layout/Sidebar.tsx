@@ -60,8 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
                 updateUser({ isPro: true });
                 alert('🎉 Congratulations!\n\nYou have successfully upgraded to Pro!\n\nAll premium features are now unlocked:\n• Export reports\n• Advanced analytics\n• Priority support');
               }
-            }}
-          >
+            }}>
             Upgrade Now
           </button>
         </div>
