@@ -52,9 +52,11 @@ const InventoryManager = () => {
     if (editingProduct) {
       // Update existing product
       await updateProduct(editingProduct.id, productData);
+      alert(`✅ Product updated successfully!\n\n${productData.name} has been updated in your inventory.`);
     } else {
       // Add new product
       await addProduct(productData);
+      alert(`✅ Product added successfully!\n\n${productData.name} has been added to your inventory with ${productData.quantity} units.`);
     }
 
     resetForm();

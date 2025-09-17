@@ -42,8 +42,10 @@ ${reportData.topProducts.map((product, index) =>
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      alert(`✅ Report exported successfully!\n\nYour ${period} business report has been downloaded.\n\nFile: ${period}-report-${new Date().toISOString().split('T')[0]}.txt\n\nThis is a Pro feature - thank you for upgrading!`);
     } catch (error) {
-      alert('Failed to export report. Please try again.');
+      alert('❌ Export failed!\n\nUnable to export report. Please try again or contact support if the issue persists.');
     } finally {
       setIsExporting(false);
     }

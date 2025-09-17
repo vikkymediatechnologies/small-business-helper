@@ -74,7 +74,7 @@ const SalesForm = () => {
         });
       }
 
-      setSuccess(`Sale recorded successfully! ₦${saleData.total_amount.toLocaleString()}`);
+      setSuccess(`✅ Sale recorded successfully!\n\nAmount: ₦${saleData.total_amount.toLocaleString()}\nProduct: ${selectedProduct.name}\nQuantity: ${quantity}\nCustomer: ${customerName || 'Walk-in customer'}\nStatus: ${isPaid ? 'Paid' : 'Debt'}`);
       
       // Reset form
       setSelectedProduct(null);

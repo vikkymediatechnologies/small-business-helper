@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (authError) {
         console.error('Auth error:', authError);
-        return false;
+        throw new Error(authError.message);
       }
 
       if (authData.user) {
@@ -123,15 +123,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
-          return false;
+          throw new Error('Failed to create user profile');
         }
 
+        // Show success notification
+        alert(`🎉 Account created successfully!\n\nWelcome to Small Business Helper, ${businessName}!\n\nYou can now start managing your business with our free plan.`);
         return true;
       }
 
-      return false;
+      throw new Error('Failed to create account');
     } catch (error) {
       console.error('Registration error:', error);
+      alert(`❌ Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     } finally {
       setIsLoading(false);
@@ -150,12 +153,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Login error:', error);
+        alert(`❌ Login failed: ${error.message}`);
         return false;
       }
 
+      if (data.user) {
+        alert(`✅ Welcome back!\n\nSuccessfully logged in to your business account.`);
+      }
       return !!data.user;
     } catch (error) {
       console.error('Login error:', error);
+      alert(`❌ Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     } finally {
       setIsLoading(false);

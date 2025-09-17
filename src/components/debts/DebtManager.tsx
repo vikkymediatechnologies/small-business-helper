@@ -31,6 +31,8 @@ const DebtManager = () => {
     if (error) {
       console.error('Error updating sale:', error);
     }
+    
+    alert(`✅ Debt marked as paid!\n\nCustomer: ${debt.customer_name}\nAmount: ₦${debt.amount.toLocaleString()}\n\nThe debt has been successfully cleared from your records.`);
   };
 
   const filteredDebts = debts.filter(debt => {

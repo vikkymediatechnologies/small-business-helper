@@ -56,12 +56,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
           <button className="bg-white text-blue-600 text-xs px-3 py-1 rounded font-medium hover:bg-gray-100 transition-colors">
             onClick={() => {
               // Simulate upgrade - in real app this would integrate with payment processor
-              if (confirm('Upgrade to Pro for ₦2,000/month? (This is a demo - no actual payment required)')) {
-                const updatedUser = { ...user, isPro: true };
-                localStorage.setItem('sbh_user', JSON.stringify(updatedUser));
-                window.location.reload();
+              if (confirm('Upgrade to Pro for ₦2,000/month?\n\n✅ Cloud backup\n✅ PDF & WhatsApp receipts\n✅ Advanced reports\n✅ Multi-user access\n✅ WhatsApp reminders\n\n(This is a demo - no actual payment required)')) {
+                updateUser({ isPro: true });
+                alert('🎉 Congratulations!\n\nYou have successfully upgraded to Pro!\n\nAll premium features are now unlocked:\n• Export reports\n• Advanced analytics\n• Priority support');
               }
             }}
+          >
             Upgrade Now
           </button>
         </div>
