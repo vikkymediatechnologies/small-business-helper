@@ -157,7 +157,6 @@ const Settings = () => {
               </p>
             </div>
             {!user?.isPro && (
-              <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
               <button 
                 onClick={() => {
                   if (confirm('Upgrade to Pro Plan?\n\nPrice: ₦2,000/month or ₦20,000/year\n\n🚀 Premium Features:\n• Cloud backup & sync\n• PDF & WhatsApp receipts\n• Advanced business reports\n• Multi-user access\n• WhatsApp notifications\n• Low stock alerts\n• Priority support\n\n(Demo mode - no actual payment)')) {
