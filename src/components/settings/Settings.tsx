@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, User, Phone, Store, Crown, Shield, Download, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
 const Settings = () => {
@@ -10,10 +11,11 @@ const Settings = () => {
 
   const handleSave = () => {
     if (!businessName.trim()) {
-      alert('Business name cannot be empty');
+      toast.error('Business name cannot be empty');
       return;
     }
     updateUser({ businessName });
+    toast.success('Business name updated successfully');
     setIsEditing(false);
   };
 
@@ -44,20 +46,22 @@ const Settings = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      toast.success('Data exported successfully! Check your downloads folder.');
     } catch (error) {
-      alert('Failed to export data. Please try again.');
+      toast.error('Failed to export data. Please try again.');
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleClearData = () => {
-    if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
-      if (confirm('This will delete all your products, sales, and debts. Are you absolutely sure?')) {
+    if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+      if (window.confirm('This will delete all your products, sales, and debts. Are you absolutely sure?')) {
         localStorage.removeItem('sbh_products');
         localStorage.removeItem('sbh_sales');
         localStorage.removeItem('sbh_debts');
-        alert('All data has been cleared successfully.');
+        toast.success('All data has been cleared successfully.');
         window.location.reload();
       }
     }
@@ -159,9 +163,11 @@ const Settings = () => {
             {!user?.isPro && (
               <button 
                 onClick={() => {
-                  if (confirm('Upgrade to Pro Plan?\n\nPrice: ₦2,000/month or ₦20,000/year\n\n🚀 Premium Features:\n• Cloud backup & sync\n• PDF & WhatsApp receipts\n• Advanced business reports\n• Multi-user access\n• WhatsApp notifications\n• Low stock alerts\n• Priority support\n\n(Demo mode - no actual payment)')) {
+                  if (window.confirm('Upgrade to Pro Plan?\n\nPrice: ₦2,000/month or ₦20,000/year\n\n🚀 Premium Features:\n• Cloud backup & sync\n• PDF & WhatsApp receipts\n• Advanced business reports\n• Multi-user access\n• WhatsApp notifications\n• Low stock alerts\n• Priority support\n\n(Demo mode - no actual payment)')) {
                     updateUser({ isPro: true });
-                    alert('🎉 Upgrade Successful!\n\nWelcome to Small Business Helper Pro!\n\nYour premium features are now active:\n✅ Export reports unlocked\n✅ Advanced analytics available\n✅ Priority support activated\n\nEnjoy your enhanced business management experience!');
+                    toast.success('🎉 Upgrade Successful! Welcome to Small Business Helper Pro! Your premium features are now active.', {
+                      duration: 5000,
+                    });
                   }
                 }}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium"

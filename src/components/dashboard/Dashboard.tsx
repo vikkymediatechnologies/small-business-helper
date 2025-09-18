@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useProducts, useSales, useDebts } from '../../hooks/useSupabaseData';
+import toast from 'react-hot-toast';
 
 interface DashboardProps {
   setActiveTab: (tab: string) => void;
@@ -141,9 +142,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
                 <button 
                   onClick={() => updateUser({ isPro: true })}
                   onClick={() => {
-                    if (confirm('Upgrade to Pro for ₦2,000/month?\n\n✅ Cloud backup & sync\n✅ PDF & WhatsApp receipts\n✅ Advanced profit reports\n✅ Multi-user access\n✅ WhatsApp reminders\n✅ Priority support\n\n(Demo mode - no payment required)')) {
+                    if (window.confirm('Upgrade to Pro for ₦2,000/month?\n\n✅ Cloud backup & sync\n✅ PDF & WhatsApp receipts\n✅ Advanced profit reports\n✅ Multi-user access\n✅ WhatsApp reminders\n✅ Priority support\n\n(Demo mode - no payment required)')) {
                       updateUser({ isPro: true });
-                      alert('🎉 Welcome to Pro!\n\nYour account has been upgraded successfully!\n\nNew features unlocked:\n• Export business reports\n• Advanced analytics dashboard\n• Priority customer support\n\nStart exploring your new Pro features now!');
+                      toast.success('🎉 Welcome to Pro! Your account has been upgraded successfully. All premium features are now unlocked!', {
+                        duration: 5000,
+                      });
                     }
                   }}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all"

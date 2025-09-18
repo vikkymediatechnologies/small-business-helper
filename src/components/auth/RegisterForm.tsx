@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Smartphone, Store, Lock, Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
 interface RegisterFormProps {
@@ -12,42 +13,38 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
-  const [error, setError] = useState('');
   const { register, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (!phone || !businessName || !pin || !confirmPin) {
-      setError('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
     if (phone.length < 10) {
-      setError('Please enter a valid phone number');
+      toast.error('Please enter a valid phone number');
       return;
     }
 
     if (businessName.trim().length < 2) {
-      setError('Business name must be at least 2 characters');
+      toast.error('Business name must be at least 2 characters');
       return;
     }
 
     if (pin.length < 6) {
-      setError('Password must be at least 6 characters');
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
     if (pin !== confirmPin) {
-      setError('PINs do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
     const success = await register(phone, pin, businessName);
-    if (!success) {
-      setError('Phone number already registered');
-    }
+    // Success/error handling is now done in the AuthContext with toasts
   };
 
   return (
@@ -126,12 +123,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               disabled={isLoading}
             />
           </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
 
           <button
             type="submit"

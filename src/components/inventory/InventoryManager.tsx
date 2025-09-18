@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Package, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useProducts } from '../../hooks/useSupabaseData';
 
 const InventoryManager = () => {
@@ -31,7 +32,7 @@ const InventoryManager = () => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      alert('Product name is required');
+      toast.error('Product name is required');
       return;
     }
 
@@ -52,11 +53,11 @@ const InventoryManager = () => {
     if (editingProduct) {
       // Update existing product
       await updateProduct(editingProduct.id, productData);
-      alert(`✅ Product updated successfully!\n\n${productData.name} has been updated in your inventory.`);
+      toast.success(`${productData.name} updated successfully in your inventory`);
     } else {
       // Add new product
       await addProduct(productData);
-      alert(`✅ Product added successfully!\n\n${productData.name} has been added to your inventory with ${productData.quantity} units.`);
+      toast.success(`${productData.name} added to inventory with ${productData.quantity} units`);
     }
 
     resetForm();
@@ -75,8 +76,9 @@ const InventoryManager = () => {
   };
 
   const handleDelete = async (productId: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm('Are you sure you want to delete this product?')) {
       await deleteProduct(productId);
+      toast.success('Product deleted successfully');
     }
   };
 

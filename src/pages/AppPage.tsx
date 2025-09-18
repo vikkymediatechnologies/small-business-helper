@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
@@ -13,8 +14,19 @@ import MobileNav from '../components/layout/MobileNav';
 
 const AppPage = () => {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Redirect to dashboard after successful authentication
+  React.useEffect(() => {
+    if (user && authMode === 'register') {
+      // Small delay to ensure toast is visible before redirect
+      setTimeout(() => {
+        setActiveTab('dashboard');
+      }, 1000);
+    }
+  }, [user, authMode]);
 
   if (isLoading) {
     return (

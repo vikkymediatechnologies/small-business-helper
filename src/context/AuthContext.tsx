@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 
 interface User {
@@ -127,14 +128,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Show success notification
-        alert(`🎉 Account created successfully!\n\nWelcome to Small Business Helper, ${businessName}!\n\nYou can now start managing your business with our free plan.`);
+        toast.success(`🎉 Welcome to Small Business Helper, ${businessName}! Your account has been created successfully.`, {
+          duration: 4000,
+        });
         return true;
       }
 
       throw new Error('Failed to create account');
     } catch (error) {
       console.error('Registration error:', error);
-      alert(`❌ Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     } finally {
       setIsLoading(false);
@@ -153,17 +156,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Login error:', error);
-        alert(`❌ Login failed: ${error.message}`);
+        toast.error(`Login failed: ${error.message}`);
         return false;
       }
 
       if (data.user) {
-        alert(`✅ Welcome back!\n\nSuccessfully logged in to your business account.`);
+        toast.success(`Welcome back! Successfully logged in to your business account.`);
       }
       return !!data.user;
     } catch (error) {
       console.error('Login error:', error);
-      alert(`❌ Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     } finally {
       setIsLoading(false);

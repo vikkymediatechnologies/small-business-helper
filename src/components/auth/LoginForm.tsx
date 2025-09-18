@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Smartphone, Lock, Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
 interface LoginFormProps {
@@ -10,32 +11,28 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
-  const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (!phone || !pin) {
-      setError('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
     if (phone.length < 10) {
-      setError('Please enter a valid phone number');
+      toast.error('Please enter a valid phone number');
       return;
     }
 
     if (pin.length < 6) {
-      setError('Password must be at least 6 characters');
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
     const success = await login(phone, pin);
-    if (!success) {
-      setError('Invalid phone number or PIN');
-    }
+    // Success/error handling is now done in the AuthContext with toasts
   };
 
   return (
@@ -86,12 +83,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
               </button>
             </div>
           </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
 
           <button
             type="submit"

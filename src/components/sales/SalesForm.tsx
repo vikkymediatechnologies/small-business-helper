@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Plus, Minus, User, Package } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useProducts, useSales, useDebts } from '../../hooks/useSupabaseData';
 
 const SalesForm = () => {
@@ -13,26 +14,22 @@ const SalesForm = () => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [isPaid, setIsPaid] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     if (!selectedProduct) {
-      setError('Please select a product');
+      toast.error('Please select a product');
       return;
     }
 
     if (quantity > selectedProduct.quantity) {
-      setError('Not enough stock available');
+      toast.error('Not enough stock available');
       return;
     }
 
     if (!isPaid && (!customerName || !customerPhone)) {
-      setError('Customer name and phone required for debt sales');
+      toast.error('Customer name and phone required for debt sales');
       return;
     }
 
@@ -54,7 +51,7 @@ const SalesForm = () => {
 
       const sale = await addSale(saleData);
       if (!sale) {
-        setError('Failed to record sale');
+        toast.error('Failed to record sale');
         return;
       }
 
@@ -74,7 +71,9 @@ const SalesForm = () => {
         });
       }
 
-      setSuccess(`✅ Sale recorded successfully!\n\nAmount: ₦${saleData.total_amount.toLocaleString()}\nProduct: ${selectedProduct.name}\nQuantity: ${quantity}\nCustomer: ${customerName || 'Walk-in customer'}\nStatus: ${isPaid ? 'Paid' : 'Debt'}`);
+      toast.success(`Sale recorded successfully! ₦${saleData.total_amount.toLocaleString()} - ${selectedProduct.name} (${quantity} units)`, {
+        duration: 4000,
+      });
       
       // Reset form
       setSelectedProduct(null);
@@ -84,7 +83,7 @@ const SalesForm = () => {
       setIsPaid(true);
 
     } catch (err) {
-      setError('Failed to record sale. Please try again.');
+      toast.error('Failed to record sale. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -234,18 +233,6 @@ const SalesForm = () => {
                         required
                       />
                     </div>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-red-600 text-sm">{error}</p>
-                  </div>
-                )}
-
-                {success && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-green-600 text-sm">{success}</p>
                   </div>
                 )}
 

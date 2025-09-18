@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Phone, CheckCircle, Clock, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useDebts, useSales } from '../../hooks/useSupabaseData';
 import { supabase } from '../../lib/supabase';
 
@@ -10,7 +11,7 @@ const DebtManager = () => {
   const [filter, setFilter] = useState<'all' | 'unpaid' | 'paid'>('unpaid');
 
   const handleMarkPaid = async (debtId: string) => {
-    if (!confirm('Mark this debt as paid?')) {
+    if (!window.confirm('Mark this debt as paid?')) {
       return;
     }
     
@@ -32,7 +33,7 @@ const DebtManager = () => {
       console.error('Error updating sale:', error);
     }
     
-    alert(`✅ Debt marked as paid!\n\nCustomer: ${debt.customer_name}\nAmount: ₦${debt.amount.toLocaleString()}\n\nThe debt has been successfully cleared from your records.`);
+    toast.success(`Debt cleared! ${debt.customer_name} - ₦${debt.amount.toLocaleString()} marked as paid`);
   };
 
   const filteredDebts = debts.filter(debt => {

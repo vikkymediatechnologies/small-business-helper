@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart3, TrendingUp, DollarSign, Package, Calendar, Download, FileText } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { Sale, Product } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -43,9 +44,11 @@ ${reportData.topProducts.map((product, index) =>
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      alert(`✅ Report exported successfully!\n\nYour ${period} business report has been downloaded.\n\nFile: ${period}-report-${new Date().toISOString().split('T')[0]}.txt\n\nThis is a Pro feature - thank you for upgrading!`);
+      toast.success(`${period} business report exported successfully! Check your downloads folder.`, {
+        duration: 4000,
+      });
     } catch (error) {
-      alert('❌ Export failed!\n\nUnable to export report. Please try again or contact support if the issue persists.');
+      toast.error('Export failed! Unable to export report. Please try again.');
     } finally {
       setIsExporting(false);
     }

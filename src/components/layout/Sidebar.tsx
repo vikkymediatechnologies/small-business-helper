@@ -10,6 +10,7 @@ import {
   Crown
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 interface SidebarProps {
   activeTab: string;
@@ -56,26 +57,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
     <button
       onClick={() => {
         // Simulate upgrade - in real app this would integrate with payment processor
-        if (
-          confirm(
-            "Upgrade to Pro for ₦2,000/month?\n\n" +
-              "✅ Cloud backup\n" +
-              "✅ PDF & WhatsApp receipts\n" +
-              "✅ Advanced reports\n" +
-              "✅ Multi-user access\n" +
-              "✅ WhatsApp reminders\n\n" +
-              "(This is a demo - no actual payment required)"
-          )
-        ) {
+        if (window.confirm("Upgrade to Pro for ₦2,000/month?\n\n✅ Cloud backup\n✅ PDF & WhatsApp receipts\n✅ Advanced reports\n✅ Multi-user access\n✅ WhatsApp reminders\n\n(This is a demo - no actual payment required)")) {
           updateUser({ isPro: true });
-          alert(
-            "🎉 Congratulations!\n\n" +
-              "You have successfully upgraded to Pro!\n\n" +
-              "All premium features are now unlocked:\n" +
-              "• Export reports\n" +
-              "• Advanced analytics\n" +
-              "• Priority support"
-          );
+          toast.success('🎉 Congratulations! You have successfully upgraded to Pro! All premium features are now unlocked.', {
+            duration: 5000,
+          });
         }
       }}
       className="bg-white text-blue-600 text-xs px-3 py-1 rounded font-medium hover:bg-gray-100 transition-colors"
