@@ -43,28 +43,48 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
         </div>
       </div>
 
-      {/* Pro Badge */}
-      {!user?.isPro && (
-        <div className="mx-4 mt-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-3 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <Crown className="h-4 w-4" />
-            <span className="text-sm font-medium">Upgrade to Pro</span>
-          </div>
-          <p className="text-xs opacity-90 mb-3">
-            Get receipts, cloud backup, and advanced reports
-          </p>
-          <button className="bg-white text-blue-600 text-xs px-3 py-1 rounded font-medium hover:bg-gray-100 transition-colors">
-            onClick={() => {
-              // Simulate upgrade - in real app this would integrate with payment processor
-              if (confirm('Upgrade to Pro for ₦2,000/month?\n\n✅ Cloud backup\n✅ PDF & WhatsApp receipts\n✅ Advanced reports\n✅ Multi-user access\n✅ WhatsApp reminders\n\n(This is a demo - no actual payment required)')) {
-                updateUser({ isPro: true });
-                alert('🎉 Congratulations!\n\nYou have successfully upgraded to Pro!\n\nAll premium features are now unlocked:\n• Export reports\n• Advanced analytics\n• Priority support');
-              }
-            }}>
-            Upgrade Now
-          </button>
-        </div>
-      )}
+{/* Pro Badge */}
+{!user?.isPro && (
+  <div className="mx-4 mt-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-3 text-white">
+    <div className="flex items-center gap-2 mb-2">
+      <Crown className="h-4 w-4" />
+      <span className="text-sm font-medium">Upgrade to Pro</span>
+    </div>
+    <p className="text-xs opacity-90 mb-3">
+      Get receipts, cloud backup, and advanced reports
+    </p>
+    <button
+      onClick={() => {
+        // Simulate upgrade - in real app this would integrate with payment processor
+        if (
+          confirm(
+            "Upgrade to Pro for ₦2,000/month?\n\n" +
+              "✅ Cloud backup\n" +
+              "✅ PDF & WhatsApp receipts\n" +
+              "✅ Advanced reports\n" +
+              "✅ Multi-user access\n" +
+              "✅ WhatsApp reminders\n\n" +
+              "(This is a demo - no actual payment required)"
+          )
+        ) {
+          updateUser({ isPro: true });
+          alert(
+            "🎉 Congratulations!\n\n" +
+              "You have successfully upgraded to Pro!\n\n" +
+              "All premium features are now unlocked:\n" +
+              "• Export reports\n" +
+              "• Advanced analytics\n" +
+              "• Priority support"
+          );
+        }
+      }}
+      className="bg-white text-blue-600 text-xs px-3 py-1 rounded font-medium hover:bg-gray-100 transition-colors"
+    >
+      Upgrade Now
+    </button>
+  </div>
+)}
+
 
       {/* Navigation */}
       <nav className="flex-1 p-4">
