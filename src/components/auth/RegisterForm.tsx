@@ -34,8 +34,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       return;
     }
 
-    if (pin.length !== 4) {
-      setError('PIN must be 4 digits');
+    if (pin.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
 
@@ -98,8 +98,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               <input
                 type={showPin ? 'text' : 'password'}
                 value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="1234"
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="Enter password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
                 disabled={isLoading}
               />
@@ -120,8 +120,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             <input
               type={showPin ? 'text' : 'password'}
               value={confirmPin}
-              onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder="1234"
+              onChange={(e) => setConfirmPin(e.target.value)}
+              placeholder="Confirm password"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={isLoading}
             />
