@@ -18,7 +18,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!phone || !businessName || !pin || !confirmPin) {
+    if (!phone || !businessName || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -33,17 +33,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       return;
     }
 
-    if (pin.length < 6) {
+    if (password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
 
-    if (pin !== confirmPin) {
+    if (password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
 
-    const success = await register(phone, pin, businessName);
+    const success = await register(phone, password, businessName);
     // Success/error handling is now done in the AuthContext with toasts
   };
 
